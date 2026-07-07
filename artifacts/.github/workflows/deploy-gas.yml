@@ -31,6 +31,7 @@ jobs:
     env:
       GAS_DEV_CHECK_URL: ${{ vars.GAS_DEV_CHECK_URL }}
       CLASP_SCRIPT_ID: ${{ secrets.CLASP_SCRIPT_ID }}
+      CLASP_DEPLOYMENT_ID: ${{ secrets.CLASP_DEPLOYMENT_ID }}
     steps:
       - name: Post environment check URL to PR
         uses: actions/github-script@v7
@@ -41,10 +42,17 @@ jobs:
             const manualUrl = process.env.GAS_DEV_CHECK_URL || '';
             const fallbackUrl = scriptId ? `https://script.google.com/home/projects/${scriptId}/edit` : '';
             const targetUrl = manualUrl || fallbackUrl;
+            const deploymentId = process.env.CLASP_DEPLOYMENT_ID || '';
+            const devUrl = deploymentId ? `https://script.google.com/macros/s/${deploymentId}/dev` : '';
 
-            const body = targetUrl
-              ? `${marker}\nGAS 開発環境は以下の URL で確認できます。\n\n- ${targetUrl}`
-              : `${marker}\nGAS 開発環境の確認 URL は未設定です。\n\n- リポジトリ Variables の \`GAS_DEV_CHECK_URL\` を設定してください。\n- または \`CLASP_SCRIPT_ID\` を Environment secrets に設定してください。`;
+            let body;
+            if (targetUrl) {
+              const lines = [marker, 'GAS 開発環境は以下の URL で確認できます。', '', `- ${targetUrl}`];
+              if (devUrl) lines.push(`- デプロイ確認 (dev): ${devUrl}`);
+              body = lines.join('\n');
+            } else {
+              body = `${marker}\nGAS 開発環境の確認 URL は未設定です。\n\n- リポジトリ Variables の \`GAS_DEV_CHECK_URL\` を設定してください。\n- または \`CLASP_SCRIPT_ID\` を Environment secrets に設定してください。`;
+            }
 
             const { owner, repo } = context.repo;
             const issue_number = context.payload.pull_request.number;
