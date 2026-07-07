@@ -118,7 +118,7 @@ check-gas-init-prerequisites.bat
 check-gas-init-prerequisites.ps1
 ```
 
-注記: 古いファイルをローカルに保持している場合、文字コード差異で PowerShell の解析エラーが出ることがあります。`develop` の最新を取得してから再実行してください。
+Note: If old local files are used, PowerShell parser errors can occur because of encoding differences. Always pull the latest `develop` before running any `.ps1` script.
 
 不足があった場合は、次のインストールスクリプトを実行してください。
 
@@ -127,7 +127,7 @@ installers/install-gas-prerequisites.bat
 installers/install-gas-prerequisites.ps1
 ```
 
-注記: 古いファイルをローカルに保持している場合、文字コード差異で PowerShell の解析エラーが出ることがあります。`develop` の最新を取得してから再実行してください。
+Note: If old local files are used, PowerShell parser errors can occur because of encoding differences. Always pull the latest `develop` before running any `.ps1` script.
 
 ### ステップ4: 完了
 
