@@ -25,6 +25,14 @@ GitHub の特定ブランチへの push、または手動実行をトリガー�
   - `target_environment`
 - `target_environment` が未指定の場合は `production` を利用します
 
+### 3. pull_request
+
+- 対象: `main` 向け PR の `opened` / `reopened`
+- 開発環境確認 URL を PR コメントとして自動投稿
+- URL の優先順位
+  - Repository Variables の `GAS_DEV_CHECK_URL`
+  - `CLASP_SCRIPT_ID` から生成する Apps Script エディタ URL
+
 ### push 時の environment 選択
 
 - `develop` への push は `production` environment を利用
@@ -66,6 +74,19 @@ flowchart TD
     K --> L[Deploy web app]
     L --> M
 ```
+
+  ## PR 作成時コメントのフロー
+
+  ```mermaid
+  flowchart TD
+    A[main 向け PR を作成 or 再オープン] --> B[pull_request イベント起動]
+    B --> C[comment ジョブが実行]
+    C --> D{GAS_DEV_CHECK_URL あり?}
+    D -->|Yes| E[その URL を PR コメントに投稿]
+    D -->|No| F{CLASP_SCRIPT_ID あり?}
+    F -->|Yes| G[Apps Script エディタ URL を生成して投稿]
+    F -->|No| H[設定不足の案内コメントを投稿]
+  ```
 
 ## メンバー開発フローと CI/CD の接続
 

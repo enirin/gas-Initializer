@@ -148,6 +148,14 @@ installers/install-gas-prerequisites.ps1
 - `develop` への push は `production` environment の secrets を使った `clasp push` のみを実行します。
 - `main` への push は `production` environment の secrets を使って `clasp push` に加え `clasp deploy` まで実行します。
 - 追加 environment は `workflow_dispatch` で明示指定して deploy します。
+- `main` 向け PR 作成時に、開発環境確認 URL を PR コメントとして自動投稿します。
+
+PR コメントに表示する URL は以下の優先順位です。
+
+1. Repository Variables の `GAS_DEV_CHECK_URL`
+2. `production` environment の `CLASP_SCRIPT_ID` から生成した Apps Script エディタ URL
+
+`GAS_DEV_CHECK_URL` の設定を推奨します。
 
 CI/CD の詳細な流れは [deploy-gas-cicd.md](deploy-gas-cicd.md) を参照してください。
 
