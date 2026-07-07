@@ -184,8 +184,9 @@ if ([string]::IsNullOrWhiteSpace($scriptId)) {
 
 Write-Section 'Step 3: Copy GitHub Actions workflow'
 $artifactWorkflowRoot = Join-Path $PSScriptRoot 'artifacts\.github\workflows'
+$targetWorkflowRoot = Join-Path $fullPath '.github\workflows'
 try {
-    Copy-ArtifactFiles -SourceRoot $artifactWorkflowRoot -DestinationRoot $fullPath
+    Copy-ArtifactFiles -SourceRoot $artifactWorkflowRoot -DestinationRoot $targetWorkflowRoot
     Write-Host 'Workflow files copied.' -ForegroundColor Green
 } catch {
     Write-Host "Failed to copy workflow files: $_" -ForegroundColor Red

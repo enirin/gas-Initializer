@@ -135,7 +135,7 @@ Note: If old local files are used, PowerShell parser errors can occur because of
 
 ✓ フォルダ作成  
 ✓ clasp clone実行  
-✓ GitHub Actions workflow の配置  
+✓ GitHub Actions workflow の配置 (`.github/workflows/deploy-gas.yml`)  
 ✓ git init / develop ブランチ作成  
 ✓ リモートリポジトリ接続  
 ✓ ファイル登録・初回コミット  
@@ -148,6 +148,8 @@ Note: If old local files are used, PowerShell parser errors can occur because of
 
 `artifacts/.github/workflows/deploy-gas.yml` は初期化時に新規プロジェクトへコピーされます。  
 この workflow は `develop` / `main` への push と手動実行 (`workflow_dispatch`) に対応しており、`clasp` を使った Apps Script の push / version / deploy を行います。
+
+配置先がプロジェクト直下ではなく、必ず `.github/workflows/deploy-gas.yml` になっていることを確認してください。
 
 - `develop` への push は `production` environment の secrets を使った `clasp push` のみを実行します。
 - `main` への push は `production` environment の secrets を使って `clasp push` に加え `clasp deploy` まで実行します。
