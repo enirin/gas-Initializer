@@ -169,9 +169,11 @@ CI/CD の詳細な流れは [deploy-gas-cicd.md](deploy-gas-cicd.md) を参照�
 
 初期化スクリプトは `production` environment をデフォルトで登録し、必要に応じて追加 environment もまとめて登録できます。
 
-- `CLASP_CREDENTIALS_JSON` : ローカルの `~/.clasprc.json` を元に登録
+- `CLASP_CREDENTIALS_JSON` : ローカルの `~/.clasprc.json` を Base64 エンコードして登録（JSON 整合性を保証）
 - `CLASP_SCRIPT_ID` : `clasp` の script ID
 - `CLASP_DEPLOYMENT_ID` : 任意。既存 deployment を更新する場合に利用
+
+**重要**: `CLASP_CREDENTIALS_JSON` は Base64 エンコード形式で保存されており、CI/CD ワークフロー実行時に自動的にデコードされて `.clasprc.json` に復元されます。このため、秘密情報を直接 GitHub の UI から確認してもテキストとして読めません。
 
 Environment secret は後から次のスクリプトでも登録できます。
 
@@ -265,6 +267,29 @@ PowerShell が `git` の標準エラー出力をエラー表示する場合が�
 
 - `Secret registration completed: <environment>` が表示されていれば登録成功です
 - 最新版スクリプトでは `gh` の出力を統合して、誤検知表示を抑制しています
+
+### エラー: `.clasprc.json is not valid JSON: Expected property name or '}' in JSON at position 1`
+
+このエラーは CI/CD ワークフロー実行時に `.clasprc.json` の復元に失敗している場合に発生します。原因と対処：
+
+**原因:**
+- Base64 デコード時の改行や空白文字の問題
+- 秘密情報がクリップボードやテキストエディタを経由して破損している
+
+**対処:**
+1. ローカルで秘密を再登録する：
+   ```powershell
+   register-gas-environment-secrets.ps1
+   ```
+   プロンプトで対象環境を指定してください。
+
+2. または手動で秘密を削除して再設定：
+   ```bash
+   gh secret delete CLASP_CREDENTIALS_JSON --repo <owner>/<repo> --env production
+   ```
+   その後、`init-gas-project.ps1` の Step 8 を再実行します。
+
+3. 秘密情報が GitHub UI から登録されている場合、必ず初期化スクリプト経由で再登録してください。スクリプト側で Base64 エンコード/デコードを正しく処理しています。
 
 ## スクリプト修正
 

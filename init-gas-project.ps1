@@ -100,9 +100,10 @@ function Invoke-SecretRegistration {
     $clasprcPath = Join-Path $HOME '.clasprc.json'
     if (-not (Test-Path $clasprcPath)) {
         Write-Host "$clasprcPath was not found. CLASP_CREDENTIALS_JSON will be skipped." -ForegroundColor Yellow
-        $credentialsJson = $null
+        $credentialsBase64 = $null
     } else {
         $credentialsJson = ConvertTo-MinifiedJson -Path $clasprcPath
+        $credentialsBase64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($credentialsJson))
     }
 
     foreach ($environmentName in $EnvironmentNames) {
@@ -113,8 +114,8 @@ function Invoke-SecretRegistration {
 
         Write-Host "Registering secrets for environment '$envName'..." -ForegroundColor Cyan
 
-        if ($credentialsJson) {
-            & gh secret set CLASP_CREDENTIALS_JSON --repo $Repository --env $envName --body $credentialsJson 2>&1 | Out-Null
+        if ($credentialsBase64) {
+            & gh secret set CLASP_CREDENTIALS_JSON --repo $Repository --env $envName --body $credentialsBase64 2>&1 | Out-Null
             if ($LASTEXITCODE -ne 0) {
                 throw "Failed to set CLASP_CREDENTIALS_JSON for $envName"
             }
