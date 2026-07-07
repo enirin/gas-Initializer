@@ -1,0 +1,183 @@
+name: Deploy GAS
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: "GitHub Environment name. Defaults to production when empty."
+        required: false
+        default: "production"
+        type: string
+
+jobs:
+  gas_sync_and_deploy:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.target_environment != '' && github.event.inputs.target_environment || 'production') || 'production' }}
+    concurrency:
+      group: gas-deploy-${{ github.event_name }}-${{ github.ref_name }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    env:
+      # Temporary workaround: GitHub-hosted runner + newer Node can intermittently fail with
+      # "Premature close" against script.googleapis.com during clasp push.
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.20.2'
+
+      - name: Install clasp
+        run: |
+          npm install -g @google/clasp@latest
+          node -v
+          clasp --version
+
+      - name: Write clasp credentials
+        env:
+          CLASP_CREDENTIALS_JSON: ${{ secrets.CLASP_CREDENTIALS_JSON }}
+        run: |
+          if [ -z "$CLASP_CREDENTIALS_JSON" ]; then
+            echo "CLASP_CREDENTIALS_JSON is not set." >&2
+            exit 1
+          fi
+          mkdir -p "$HOME"
+          printf '%s' "$CLASP_CREDENTIALS_JSON" > "$HOME/.clasprc.json"
+
+      - name: Validate clasp credentials JSON
+        run: |
+          node - <<'EOF'
+          const fs = require('fs');
+          const p = `${process.env.HOME}/.clasprc.json`;
+          const raw = fs.readFileSync(p, 'utf8');
+          let json;
+          try {
+            json = JSON.parse(raw);
+          } catch (err) {
+            console.error('.clasprc.json is not valid JSON:', err.message);
+            process.exit(1);
+          }
+          const token = json && json.tokens && json.tokens.default;
+          if (!token || !token.refresh_token || !token.client_id || !token.client_secret) {
+            console.error('Missing required fields in .clasprc.json (tokens.default.refresh_token/client_id/client_secret).');
+            process.exit(1);
+          }
+          console.log('clasp credentials JSON looks valid.');
+          EOF
+
+      - name: Pre-refresh OAuth access token
+        run: |
+          set -euo pipefail
+          CLIENT_ID=$(node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync(process.env.HOME+'/.clasprc.json','utf8'));process.stdout.write(j.tokens.default.client_id)")
+          CLIENT_SECRET=$(node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync(process.env.HOME+'/.clasprc.json','utf8'));process.stdout.write(j.tokens.default.client_secret)")
+          REFRESH_TOKEN=$(node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync(process.env.HOME+'/.clasprc.json','utf8'));process.stdout.write(j.tokens.default.refresh_token)")
+
+          TOKEN_RESPONSE=$(curl -sS --fail --retry 8 --retry-all-errors --retry-delay 3 \
+            -X POST 'https://oauth2.googleapis.com/token' \
+            --data-urlencode "client_id=${CLIENT_ID}" \
+            --data-urlencode "client_secret=${CLIENT_SECRET}" \
+            --data-urlencode "refresh_token=${REFRESH_TOKEN}" \
+            --data-urlencode 'grant_type=refresh_token')
+
+          TOKEN_RESPONSE="$TOKEN_RESPONSE" node - <<'EOF'
+          const fs = require('fs');
+          const p = `${process.env.HOME}/.clasprc.json`;
+          const j = JSON.parse(fs.readFileSync(p, 'utf8'));
+          const resp = JSON.parse(process.env.TOKEN_RESPONSE || '{}');
+          if (!resp.access_token) {
+            console.error('Failed to obtain access_token from OAuth token endpoint.');
+            process.exit(1);
+          }
+          const now = Date.now();
+          const expiresIn = Number(resp.expires_in || 3600);
+          j.tokens.default.access_token = resp.access_token;
+          j.tokens.default.token_type = resp.token_type || 'Bearer';
+          // Small safety margin to refresh early on subsequent runs.
+          j.tokens.default.expiry_date = now + Math.max(0, expiresIn - 60) * 1000;
+          fs.writeFileSync(p, JSON.stringify(j, null, 2));
+          console.log('Pre-refreshed OAuth access token successfully.');
+          EOF
+
+      - name: Write .clasp.json for CI
+        env:
+          CLASP_SCRIPT_ID: ${{ secrets.CLASP_SCRIPT_ID }}
+        run: |
+          if [ -z "$CLASP_SCRIPT_ID" ]; then
+            echo "CLASP_SCRIPT_ID is not set." >&2
+            exit 1
+          fi
+          cat > .clasp.json <<EOF
+          {
+            "scriptId": "${CLASP_SCRIPT_ID}",
+            "rootDir": "",
+            "scriptExtensions": [".js", ".gs"],
+            "htmlExtensions": [".html"],
+            "jsonExtensions": [".json"],
+            "filePushOrder": [],
+            "skipSubdirectories": false
+          }
+          EOF
+
+      - name: Push source to Apps Script
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            if clasp push --force; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "clasp push failed after ${attempt} attempts." >&2
+              exit 1
+            fi
+            sleep_seconds=$((attempt * 5))
+            echo "clasp push failed (attempt ${attempt}). Retrying in ${sleep_seconds}s..." >&2
+            sleep "$sleep_seconds"
+          done
+
+      - name: Create Apps Script version
+        if: github.event_name == 'workflow_dispatch' || github.ref_name == 'main'
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            if clasp version "CI ${GITHUB_SHA}"; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "clasp version failed after ${attempt} attempts." >&2
+              exit 1
+            fi
+            sleep_seconds=$((attempt * 5))
+            echo "clasp version failed (attempt ${attempt}). Retrying in ${sleep_seconds}s..." >&2
+            sleep "$sleep_seconds"
+          done
+
+      - name: Deploy web app
+        if: github.event_name == 'workflow_dispatch' || github.ref_name == 'main'
+        env:
+          CLASP_DEPLOYMENT_ID: ${{ secrets.CLASP_DEPLOYMENT_ID }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            if [ -n "$CLASP_DEPLOYMENT_ID" ]; then
+              clasp deploy --deploymentId "$CLASP_DEPLOYMENT_ID" -d "CI ${GITHUB_SHA}" && exit 0
+            else
+              clasp deploy -d "CI ${GITHUB_SHA}" && exit 0
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "clasp deploy failed after ${attempt} attempts." >&2
+              exit 1
+            fi
+            sleep_seconds=$((attempt * 5))
+            echo "clasp deploy failed (attempt ${attempt}). Retrying in ${sleep_seconds}s..." >&2
+            sleep "$sleep_seconds"
+          done
