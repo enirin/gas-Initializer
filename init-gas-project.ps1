@@ -202,6 +202,30 @@ if ($LASTEXITCODE -ne 0) {
     pause
     exit 1
 }
+
+Write-Host 'Running clasp pull to ensure latest server files are downloaded...' -ForegroundColor Cyan
+& clasp pull 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host 'clasp pull failed after clone. Check script ID and your access permission.' -ForegroundColor Red
+    pause
+    exit 1
+}
+
+$manifestPath = Join-Path $fullPath 'appsscript.json'
+if (-not (Test-Path $manifestPath)) {
+    Write-Host 'Clone completed but appsscript.json was not found. The script ID may be wrong or inaccessible.' -ForegroundColor Red
+    pause
+    exit 1
+}
+
+$scriptFiles = Get-ChildItem -Path $fullPath -File -Include *.gs,*.js,*.ts,*.html
+if ($scriptFiles.Count -eq 0) {
+    Write-Host 'Clone completed and manifest downloaded, but no script files were found (.gs/.js/.ts/.html).' -ForegroundColor Yellow
+    Write-Host 'Possible reasons: project has only manifest, no source files, or wrong script ID.' -ForegroundColor Yellow
+} else {
+    Write-Host "Downloaded script files: $($scriptFiles.Count)" -ForegroundColor Green
+}
+
 Write-Host 'clasp clone completed.' -ForegroundColor Green
 
 Write-Host ''

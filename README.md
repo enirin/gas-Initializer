@@ -220,6 +220,16 @@ npm install -g @google/clasp
 - `clasp login` で認証済みか
 - アクセス権限があるか
 
+### `clasp clone completed` と表示されるが `.gs` などのファイルがない
+
+以下を確認してください。
+
+- 入力した Script ID が対象プロジェクトのものか
+- その Script への閲覧権限があるか
+- 対象プロジェクトが実際にソースファイルを持っているか
+
+最新版スクリプトでは `clasp clone` 後に `clasp pull` と `appsscript.json` の存在チェックを行うため、異常時は明示的に停止します。
+
 ### エラー: `git checkout -b develop` 実行時の `NativeCommandError`
 
 既存フォルダを再利用した場合に、`develop` ブランチが既に存在していると発生することがあります。
