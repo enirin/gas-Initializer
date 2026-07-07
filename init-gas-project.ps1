@@ -114,8 +114,8 @@ function Invoke-SecretRegistration {
         Write-Host "Registering secrets for environment '$envName'..." -ForegroundColor Cyan
 
         if ($credentialsJson) {
-            # Pipe via stdin to avoid PowerShell 5.1 argument mangling of special characters (e.g. { " } in JSON)
-            $credentialsJson | & gh secret set CLASP_CREDENTIALS_JSON --repo $Repository --env $envName 2>&1 | Out-Null
+            # Use --body for JSON to preserve exact one-line content from ConvertTo-Json -Compress.
+            & gh secret set CLASP_CREDENTIALS_JSON --repo $Repository --env $envName --body "$credentialsJson" 2>&1 | Out-Null
             if ($LASTEXITCODE -ne 0) {
                 throw "Failed to set CLASP_CREDENTIALS_JSON for $envName"
             }

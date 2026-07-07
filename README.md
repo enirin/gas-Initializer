@@ -280,6 +280,13 @@ PowerShell が `git` の標準エラー出力をエラー表示する場合が�
 
 - `Secret registration completed: <environment>` が表示されていれば登録成功です
 - 最新版スクリプトでは `gh` の出力を統合して、誤検知表示を抑制しています
+- `init-gas-project.ps1` は Step 8 の失敗時でも初期化処理自体は完了表示になります。環境が作成されても secret が未登録の可能性があるため、GitHub の Environment secrets 画面で必ず登録結果を確認してください。
+
+確認・再登録は以下を推奨します。
+
+```powershell
+register-gas-environment-secrets.bat
+```
 
 ### エラー: `.clasprc.json is not valid JSON: Expected property name or '}' in JSON at position 1`
 
