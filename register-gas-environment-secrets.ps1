@@ -152,7 +152,8 @@ function Invoke-GhSecretSet {
         [Parameter(Mandatory = $true)][string]$SecretValue
     )
 
-    & gh secret set $SecretName --repo $RepositoryName --env $EnvironmentName --body $SecretValue 2>&1 | Out-Null
+    # Pipe via stdin to avoid PowerShell 5.1 argument mangling of special characters (e.g. { " } in JSON)
+    $SecretValue | & gh secret set $SecretName --repo $RepositoryName --env $EnvironmentName 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to set $SecretName for $EnvironmentName"
     }

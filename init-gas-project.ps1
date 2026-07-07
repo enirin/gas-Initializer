@@ -114,19 +114,20 @@ function Invoke-SecretRegistration {
         Write-Host "Registering secrets for environment '$envName'..." -ForegroundColor Cyan
 
         if ($credentialsJson) {
-            & gh secret set CLASP_CREDENTIALS_JSON --repo $Repository --env $envName --body $credentialsJson 2>&1 | Out-Null
+            # Pipe via stdin to avoid PowerShell 5.1 argument mangling of special characters (e.g. { " } in JSON)
+            $credentialsJson | & gh secret set CLASP_CREDENTIALS_JSON --repo $Repository --env $envName 2>&1 | Out-Null
             if ($LASTEXITCODE -ne 0) {
                 throw "Failed to set CLASP_CREDENTIALS_JSON for $envName"
             }
         }
 
-        & gh secret set CLASP_SCRIPT_ID --repo $Repository --env $envName --body $ScriptId 2>&1 | Out-Null
+        $ScriptId | & gh secret set CLASP_SCRIPT_ID --repo $Repository --env $envName 2>&1 | Out-Null
         if ($LASTEXITCODE -ne 0) {
             throw "Failed to set CLASP_SCRIPT_ID for $envName"
         }
 
         if (-not [string]::IsNullOrWhiteSpace($DeploymentId)) {
-            & gh secret set CLASP_DEPLOYMENT_ID --repo $Repository --env $envName --body $DeploymentId 2>&1 | Out-Null
+            $DeploymentId | & gh secret set CLASP_DEPLOYMENT_ID --repo $Repository --env $envName 2>&1 | Out-Null
             if ($LASTEXITCODE -ne 0) {
                 throw "Failed to set CLASP_DEPLOYMENT_ID for $envName"
             }
