@@ -13,6 +13,22 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# If Repository and RepositoryUrl are not specified, prompt user
+if ([string]::IsNullOrWhiteSpace($Repository) -and [string]::IsNullOrWhiteSpace($RepositoryUrl)) {
+    Write-Section 'GitHub Repository Setup'
+    $Repository = Read-Host 'Enter repository (owner/repo or URL)'
+}
+
+# If EnvironmentNames are not specified, prompt user
+if ($EnvironmentNames.Count -eq 0 -or [string]::IsNullOrWhiteSpace($EnvironmentNames[0])) {
+    $envInput = Read-Host 'Enter environment name(s) separated by comma (default: production)'
+    if ([string]::IsNullOrWhiteSpace($envInput)) {
+        $EnvironmentNames = @('production')
+    } else {
+        $EnvironmentNames = $envInput -split ',' | ForEach-Object { $_.Trim() }
+    }
+}
+
 function Write-Section {
     param([Parameter(Mandatory = $true)][string]$Message)
     Write-Host $Message -ForegroundColor Yellow
@@ -144,7 +160,14 @@ try {
     exit 1
 }
 
-$resolvedRepository = Resolve-GitHubRepositoryName -RepositoryInput $Repository -RepositoryUrlInput $RepositoryUrl
+try {
+    $resolvedRepository = Resolve-GitHubRepositoryName -RepositoryInput $Repository -RepositoryUrlInput $RepositoryUrl
+} catch {
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    pause
+    exit 1
+}
+
 $resolvedEnvironmentNames = Get-EnvironmentNames -InputNames $EnvironmentNames
 
 if ([string]::IsNullOrWhiteSpace($ScriptId)) {
