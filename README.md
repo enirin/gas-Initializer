@@ -125,6 +125,8 @@ installers/install-gas-prerequisites.bat
 installers/install-gas-prerequisites.ps1
 ```
 
+注記: 古いファイルをローカルに保持している場合、文字コード差異で PowerShell の解析エラーが出ることがあります。`develop` の最新を取得してから再実行してください。
+
 ### ステップ4: 完了
 
 以下が自動実行されます：
