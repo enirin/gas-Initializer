@@ -196,9 +196,22 @@ try {
 
 Set-Location $fullPath
 Write-Host 'Running clasp clone...' -ForegroundColor Cyan
-& clasp clone $scriptId 2>&1
+$cloneOutput = (& clasp clone $scriptId 2>&1 | Out-String)
+if ($cloneOutput -match '(?i)invalid script id') {
+    Write-Host 'clasp clone reported Invalid script ID. Verify the Script ID and access permission.' -ForegroundColor Red
+    pause
+    exit 1
+}
+
 if ($LASTEXITCODE -ne 0) {
     Write-Host 'clasp clone failed. Make sure clasp is installed and logged in.' -ForegroundColor Red
+    pause
+    exit 1
+}
+
+$claspConfigPath = Join-Path $fullPath '.clasp.json'
+if (-not (Test-Path $claspConfigPath)) {
+    Write-Host '.clasp.json was not created by clasp clone. Clone likely failed.' -ForegroundColor Red
     pause
     exit 1
 }

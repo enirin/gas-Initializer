@@ -230,6 +230,8 @@ npm install -g @google/clasp
 
 最新版スクリプトでは `clasp clone` 後に `clasp pull` と `appsscript.json` の存在チェックを行うため、異常時は明示的に停止します。
 
+`Invalid script ID.` が出た場合は clone を失敗として停止します。Script ID の再確認と、対象プロジェクトへのアクセス権確認を行ってください。
+
 ### エラー: `git checkout -b develop` 実行時の `NativeCommandError`
 
 既存フォルダを再利用した場合に、`develop` ブランチが既に存在していると発生することがあります。
