@@ -232,6 +232,20 @@ npm install -g @google/clasp
 - `gh auth login` が完了しているか
 - 対象 repository に対する権限があるか
 
+### エラー: `GitHub Actions is not permitted to create or approve pull requests.`
+
+`auto-pr-develop-to-main.yml` で `develop -> main` の PR 自動作成時に発生する場合、
+多くはリポジトリ設定で GitHub Actions からの PR 作成が禁止されています。
+
+対処:
+
+1. Repository の `Settings` -> `Actions` -> `General` を開く
+2. `Workflow permissions` で `Read and write permissions` を選択
+3. `Allow GitHub Actions to create and approve pull requests` を有効化
+
+代替として、`GH_PR_TOKEN`（PAT）を Repository Secret に設定すると、
+`auto-pr-develop-to-main.yml` はそのトークンを使って PR 作成を試行します。
+
 ### エラー: `clasp clone` 失敗
 
 以下を確認：

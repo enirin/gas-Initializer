@@ -15,29 +15,47 @@ jobs:
       - name: Create PR from develop to main if not exists
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GH_PR_TOKEN || github.token }}
           script: |
             const { owner, repo } = context.repo;
 
-            const existingPRs = await github.rest.pulls.list({
-              owner,
-              repo,
-              state: 'open',
-              head: `${owner}:develop`,
-              base: 'main',
-            });
+            try {
+              const existingPRs = await github.rest.pulls.list({
+                owner,
+                repo,
+                state: 'open',
+                head: `${owner}:develop`,
+                base: 'main',
+              });
 
-            if (existingPRs.data.length > 0) {
-              core.info(`PR already exists: #${existingPRs.data[0].number} - ${existingPRs.data[0].html_url}`);
-              return;
+              if (existingPRs.data.length > 0) {
+                core.info(`PR already exists: #${existingPRs.data[0].number} - ${existingPRs.data[0].html_url}`);
+                return;
+              }
+
+              const pr = await github.rest.pulls.create({
+                owner,
+                repo,
+                title: 'Deploy: develop → main',
+                head: 'develop',
+                base: 'main',
+                body: '`develop` ブランチの変更を `main` にマージしてデプロイします。',
+              });
+
+              core.info(`Created PR: #${pr.data.number} - ${pr.data.html_url}`);
+            } catch (error) {
+              const message = String(error?.message || '');
+
+              if (message.includes('GitHub Actions is not permitted to create or approve pull requests')) {
+                core.setFailed([
+                  'GitHub Actions の設定で PR 作成が許可されていません。',
+                  '対応方法:',
+                  '1) Repository Settings > Actions > General > Workflow permissions',
+                  '2) "Allow GitHub Actions to create and approve pull requests" を有効化',
+                  '3) もしくは `GH_PR_TOKEN` secret に PAT を設定して実行',
+                ].join('\n'));
+                return;
+              }
+
+              throw error;
             }
-
-            const pr = await github.rest.pulls.create({
-              owner,
-              repo,
-              title: 'Deploy: develop → main',
-              head: 'develop',
-              base: 'main',
-              body: '`develop` ブランチの変更を `main` にマージしてデプロイします。',
-            });
-
-            core.info(`Created PR: #${pr.data.number} - ${pr.data.html_url}`);
