@@ -48,7 +48,7 @@ function ConvertTo-MinifiedJson {
     param([Parameter(Mandatory = $true)][string]$Path)
 
     if (-not (Test-Path $Path)) {
-        throw "JSON file was not found: $Path"
+        throw "JSON file was not found: ${Path}"
     }
 
     $raw = Get-Content -Path $Path -Raw
