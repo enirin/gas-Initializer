@@ -1,0 +1,43 @@
+name: Auto PR develop to main
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  create_pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Create PR from develop to main if not exists
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+
+            const existingPRs = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: 'open',
+              head: `${owner}:develop`,
+              base: 'main',
+            });
+
+            if (existingPRs.data.length > 0) {
+              core.info(`PR already exists: #${existingPRs.data[0].number} - ${existingPRs.data[0].html_url}`);
+              return;
+            }
+
+            const pr = await github.rest.pulls.create({
+              owner,
+              repo,
+              title: 'Deploy: develop → main',
+              head: 'develop',
+              base: 'main',
+              body: '`develop` ブランチの変更を `main` にマージしてデプロイします。',
+            });
+
+            core.info(`Created PR: #${pr.data.number} - ${pr.data.html_url}`);
