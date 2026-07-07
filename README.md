@@ -259,6 +259,13 @@ PowerShell が `git` の標準エラー出力をエラー表示する場合が�
 
 最新版スクリプトでは `git push` を `cmd /c` 経由で実行するため、この誤検知表示を回避します。
 
+### Step 8 の secret 登録で赤文字エラーに見える表示が出る
+
+`gh secret set` の標準エラー出力が PowerShell で強調表示される場合があります。
+
+- `Secret registration completed: <environment>` が表示されていれば登録成功です
+- 最新版スクリプトでは `gh` の出力を統合して、誤検知表示を抑制しています
+
 ## スクリプト修正
 
 スクリプト内容を編集する場合は、`init-gas-project.ps1` と `register-gas-environment-secrets.ps1` を任意のテキストエディタで開いて修正してください。

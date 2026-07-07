@@ -114,7 +114,7 @@ function Invoke-GhSecretSet {
         [Parameter(Mandatory = $true)][string]$SecretValue
     )
 
-    & gh secret set $SecretName --repo $RepositoryName --env $EnvironmentName --body $SecretValue | Out-Null
+    & gh secret set $SecretName --repo $RepositoryName --env $EnvironmentName --body $SecretValue 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to set $SecretName for $EnvironmentName"
     }
