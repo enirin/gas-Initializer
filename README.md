@@ -249,6 +249,16 @@ npm install -g @google/clasp
 
 `init-gas-project.ps1` はリモート到達確認を行うため、URL 入力時点で失敗原因を早期に検出できます。
 
+### `git push` 時に赤文字で `NativeCommandError` が出るが branch 作成は成功している
+
+PowerShell が `git` の標準エラー出力をエラー表示する場合があります。以下が表示されていれば push 自体は成功です。
+
+- `branch 'develop' set up to track 'origin/develop'`
+- `[new branch] develop -> develop`
+- `[new branch] main -> main`
+
+最新版スクリプトでは `git push` を `cmd /c` 経由で実行するため、この誤検知表示を回避します。
+
 ## スクリプト修正
 
 スクリプト内容を編集する場合は、`init-gas-project.ps1` と `register-gas-environment-secrets.ps1` を任意のテキストエディタで開いて修正してください。

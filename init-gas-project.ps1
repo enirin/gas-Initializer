@@ -302,7 +302,7 @@ Write-Host 'First commit completed.' -ForegroundColor Green
 Write-Host ''
 Write-Section 'Step 7: Push branches'
 
-& git push -u origin develop 2>&1
+cmd /c "git push -u origin develop"
 if ($LASTEXITCODE -ne 0) {
     Write-Host 'Failed to push develop. Please push manually.' -ForegroundColor Red
     Write-Host "Remote URL: $repoUrl" -ForegroundColor Yellow
@@ -310,7 +310,7 @@ if ($LASTEXITCODE -ne 0) {
 } else {
     & git checkout -b main 2>&1 | Out-Null
     if ($LASTEXITCODE -eq 0) {
-        & git push -u origin main 2>&1
+        cmd /c "git push -u origin main"
         if ($LASTEXITCODE -ne 0) {
             Write-Host 'Failed to push main. Please push manually.' -ForegroundColor Red
         }
