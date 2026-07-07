@@ -79,7 +79,7 @@ flowchart TD
     F --> G[セルフマージで develop へ反映]
     G --> H[develop push を契機に workflow 実行]
     H --> I[GitHub Actions が production environment の secrets で clasp push]
-    I --> J[/dev 環境で動作確認]
+    I --> J[dev 環境で動作確認]
     J --> K{問題なし?}
     K -->|No| L[VS Code で修正して再度 push]
     L --> E
