@@ -161,6 +161,11 @@ PR コメントに表示する URL は以下の優先順位です。
 1. Repository Variables の `GAS_DEV_CHECK_URL`
 2. `production` environment の `CLASP_SCRIPT_ID` から生成した Apps Script エディタ URL
 
+また、PR コメントには `clasp deployments` の `@HEAD` から自動取得した dev URL も表示します。
+
+- `https://script.google.com/macros/s/<HEAD_DEPLOYMENT_ID>/dev`
+- `@HEAD` が取得できない場合は dev URL の行は表示されません
+
 `GAS_DEV_CHECK_URL` の設定を推奨します。
 
 CI/CD の詳細な流れは [deploy-gas-cicd.md](deploy-gas-cicd.md) を参照してください。
@@ -171,7 +176,7 @@ CI/CD の詳細な流れは [deploy-gas-cicd.md](deploy-gas-cicd.md) を参照�
 
 - `CLASP_CREDENTIALS_JSON` : ローカルの `~/.clasprc.json` をミニファイして登録
 - `CLASP_SCRIPT_ID` : `clasp` の script ID
-- `CLASP_DEPLOYMENT_ID` : 任意。既存 deployment を更新する場合に利用
+- `CLASP_DEPLOYMENT_ID` : 任意。既存 deployment を更新する場合に利用（PR コメントの dev URL 生成には不要）
 
 Environment secret は後から次のスクリプトでも登録できます。
 

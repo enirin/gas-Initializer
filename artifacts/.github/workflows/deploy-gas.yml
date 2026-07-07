@@ -31,8 +31,60 @@ jobs:
     env:
       GAS_DEV_CHECK_URL: ${{ vars.GAS_DEV_CHECK_URL }}
       CLASP_SCRIPT_ID: ${{ secrets.CLASP_SCRIPT_ID }}
-      CLASP_DEPLOYMENT_ID: ${{ secrets.CLASP_DEPLOYMENT_ID }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.20.2'
+
+      - name: Install clasp
+        run: npm install -g @google/clasp@latest
+
+      - name: Write clasp credentials for HEAD lookup
+        env:
+          CLASP_CREDENTIALS_JSON: ${{ secrets.CLASP_CREDENTIALS_JSON }}
+        run: |
+          if [ -z "$CLASP_CREDENTIALS_JSON" ]; then
+            echo "CLASP_CREDENTIALS_JSON is not set." >&2
+            exit 0
+          fi
+          mkdir -p "$HOME"
+          printf '%s' "$CLASP_CREDENTIALS_JSON" > "$HOME/.clasprc.json"
+
+      - name: Write .clasp.json for HEAD lookup
+        run: |
+          if [ -z "$CLASP_SCRIPT_ID" ]; then
+            echo "CLASP_SCRIPT_ID is not set." >&2
+            exit 0
+          fi
+          cat > .clasp.json <<EOF
+          {
+            "scriptId": "${CLASP_SCRIPT_ID}",
+            "rootDir": "",
+            "scriptExtensions": [".js", ".gs"],
+            "htmlExtensions": [".html"],
+            "jsonExtensions": [".json"],
+            "filePushOrder": [],
+            "skipSubdirectories": false
+          }
+          EOF
+
+      - name: Resolve HEAD deployment ID
+        run: |
+          set +e
+          if [ ! -f "$HOME/.clasprc.json" ] || [ ! -f ".clasp.json" ]; then
+            echo "HEAD_DEPLOYMENT_ID=" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          DEPLOYMENTS_OUTPUT=$(clasp deployments 2>/dev/null)
+          HEAD_DEPLOYMENT_ID=$(printf '%s\n' "$DEPLOYMENTS_OUTPUT" | awk '/@HEAD/ {for(i=1;i<=NF;i++){if($i ~ /^AKfy/){print $i; exit}}}')
+
+          echo "HEAD_DEPLOYMENT_ID=$HEAD_DEPLOYMENT_ID" >> "$GITHUB_ENV"
+
       - name: Post environment check URL to PR
         uses: actions/github-script@v7
         with:
@@ -42,8 +94,8 @@ jobs:
             const manualUrl = process.env.GAS_DEV_CHECK_URL || '';
             const fallbackUrl = scriptId ? `https://script.google.com/home/projects/${scriptId}/edit` : '';
             const targetUrl = manualUrl || fallbackUrl;
-            const deploymentId = process.env.CLASP_DEPLOYMENT_ID || '';
-            const devUrl = deploymentId ? `https://script.google.com/macros/s/${deploymentId}/dev` : '';
+            const headDeploymentId = process.env.HEAD_DEPLOYMENT_ID || '';
+            const devUrl = headDeploymentId ? `https://script.google.com/macros/s/${headDeploymentId}/dev` : '';
 
             let body;
             if (targetUrl) {
