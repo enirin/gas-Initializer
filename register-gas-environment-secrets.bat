@@ -12,6 +12,12 @@ if not exist "!PS_SCRIPT!" (
     exit /b 1
 )
 
-powershell -NoExit -ExecutionPolicy Bypass -File "!PS_SCRIPT!"
+REM Pass all arguments to PowerShell script
+set "ARGS="
+if not "%~1"=="" (
+    set "ARGS=-ProjectPath '%~1'"
+)
+
+powershell -NoExit -ExecutionPolicy Bypass -File "!PS_SCRIPT!" !ARGS!
 
 endlocal

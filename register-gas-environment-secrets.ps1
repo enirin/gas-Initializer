@@ -4,6 +4,7 @@
 # - CLASP_DEPLOYMENT_ID (optional)
 
 param(
+    [string]$ProjectPath,
     [string[]]$EnvironmentNames,
     [string]$Repository,
     [string]$RepositoryUrl,
@@ -12,6 +13,19 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# If ProjectPath is not specified, prompt user
+if ([string]::IsNullOrWhiteSpace($ProjectPath)) {
+    Write-Section 'Project Folder Setup'
+    $ProjectPath = Read-Host 'Enter project folder path (where .clasp.json exists)'
+}
+
+# Validate ProjectPath exists
+if (-not (Test-Path $ProjectPath -PathType Container)) {
+    Write-Host "Project folder not found: ${ProjectPath}" -ForegroundColor Red
+    pause
+    exit 1
+}
 
 # If Repository and RepositoryUrl are not specified, prompt user
 if ([string]::IsNullOrWhiteSpace($Repository) -and [string]::IsNullOrWhiteSpace($RepositoryUrl)) {
@@ -91,7 +105,13 @@ function Get-EnvironmentNames {
 }
 
 function Get-ScriptIdFromClaspJson {
-    $claspPath = Join-Path (Get-Location) '.clasp.json'
+    param([string]$ProjectPath)
+
+    if ([string]::IsNullOrWhiteSpace($ProjectPath)) {
+        $ProjectPath = Get-Location
+    }
+
+    $claspPath = Join-Path $ProjectPath '.clasp.json'
     if (-not (Test-Path $claspPath)) {
         return $null
     }
@@ -171,7 +191,7 @@ try {
 $resolvedEnvironmentNames = Get-EnvironmentNames -InputNames $EnvironmentNames
 
 if ([string]::IsNullOrWhiteSpace($ScriptId)) {
-    $scriptIdFromClasp = Get-ScriptIdFromClaspJson
+    $scriptIdFromClasp = Get-ScriptIdFromClaspJson -ProjectPath $ProjectPath
     if (-not [string]::IsNullOrWhiteSpace($scriptIdFromClasp)) {
         $ScriptId = $scriptIdFromClasp
     } else {

@@ -175,9 +175,24 @@ CI/CD の詳細な流れは [deploy-gas-cicd.md](deploy-gas-cicd.md) を参照�
 
 Environment secret は後から次のスクリプトでも登録できます。
 
+**パターン 1：対話的に入力する（推奨）**
 ```powershell
+# プロジェクトフォルダで実行
 register-gas-environment-secrets.bat
-register-gas-environment-secrets.ps1
+# または
+./register-gas-environment-secrets.ps1
+```
+
+スクリプトが以下をプロンプトで尋ねてくるので、入力してください：
+- プロジェクトフォルダのパス（`.clasp.json` がある場所）
+- リポジトリ URL または `owner/repo` 形式
+- 登録対象の environment 名（デフォルト: `production`）
+- Apps Script Script ID
+- Deployment ID（オプション）
+
+**パターン 2：コマンドラインから指定**
+```powershell
+./register-gas-environment-secrets.ps1 -ProjectPath "C:\path\to\project"
 ```
 
 ## トラブルシューティング
@@ -287,6 +302,21 @@ PowerShell が `git` の標準エラー出力をエラー表示する場合が�
 2. スクリプト側で JSON をミニファイ（改行を除去）して登録するため、秘密情報は完全に 1 行のテキストになります。
 
 3. **重要**: GitHub UI から秘密情報を直接登録しないでください。必ずスクリプト経由で登録してください。
+
+### エラー: `Could not resolve repository name. Use -Repository or -RepositoryUrl.`
+
+このエラーは `register-gas-environment-secrets.ps1` 実行時にリポジトリが自動検出できなかった場合に発生します。
+
+**対処:**
+
+スクリプト実行時の対話的なプロンプトで、以下のいずれかを入力してください：
+- リポジトリ URL: `https://github.com/owner/repo.git`
+- または owner/repo 形式: `owner/repo`
+
+もしくは、コマンドラインで指定：
+```powershell
+./register-gas-environment-secrets.ps1 -Repository "owner/repo"
+```
 
 ## スクリプト修正
 
