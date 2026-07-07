@@ -7,7 +7,12 @@
 # 5. Push develop/main branches
 # 6. Optionally register GitHub Environment secrets
 
-$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Continue'
+
+# On PowerShell 7+, do not promote native stderr to PowerShell errors.
+if ($PSVersionTable.PSVersion.Major -ge 7) {
+    $PSNativeCommandUseErrorActionPreference = $false
+}
 
 function Write-Section {
     param([Parameter(Mandatory = $true)][string]$Message)

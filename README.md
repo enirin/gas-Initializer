@@ -218,6 +218,13 @@ npm install -g @google/clasp
 - `clasp login` で認証済みか
 - アクセス権限があるか
 
+### エラー: `git checkout -b develop` 実行時の `NativeCommandError`
+
+既存フォルダを再利用した場合に、`develop` ブランチが既に存在していると発生することがあります。
+
+- 新しい空フォルダで再実行する
+- または既存フォルダの `.git` を削除してから再実行する
+
 ## スクリプト修正
 
 スクリプト内容を編集する場合は、`init-gas-project.ps1` と `register-gas-environment-secrets.ps1` を任意のテキストエディタで開いて修正してください。
