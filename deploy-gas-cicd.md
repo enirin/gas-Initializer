@@ -71,18 +71,15 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[VS Code で develop を最新化] --> B[作業ブランチを作成]
-    B --> C[VS Code で実装とローカル確認]
-    C --> D[VS Code で commit]
-    D --> E[VS Code で作業ブランチを push]
-    E --> F[GitHub で develop への PR を作成]
-    F --> G[セルフマージで develop へ反映]
-    G --> H[develop push を契機に workflow 実行]
+  A[VS Code で develop を最新化] --> B[VS Code で develop 上で実装とローカル確認]
+  B --> C[VS Code で develop に commit]
+  C --> D[VS Code で develop を push]
+  D --> H[develop push を契機に workflow 実行]
     H --> I[GitHub Actions が production environment の secrets で clasp push]
     I --> J[dev 環境で動作確認]
     J --> K{問題なし?}
-    K -->|No| L[VS Code で修正して再度 push]
-    L --> E
+  K -->|No| L[VS Code で develop を修正して再度 push]
+  L --> D
     K -->|Yes| M[GitHub で main への PR を作成]
     M --> N[セルフマージで main へ反映]
     N --> O[main push を契機に workflow 実行]
@@ -97,7 +94,8 @@ flowchart TD
 
 ### このフローの見方
 
-- メンバーの通常作業は `VS Code` で、`develop` の最新化から作業ブランチの push までを行います。
+- 開発メンバーが 1 名の間は、特別な理由がない限り `develop` へ直接 commit / push して開発環境確認を行います。
+- 競合回避や検証分離など特別な理由がある場合のみ、作業ブランチを作成して運用します。
 - `develop` へのマージは、`production` environment の secrets を使った `clasp push` のみを連動します。`clasp deploy` は想定していません。
 - `main` へのマージは、`production` environment に定義済みの secrets を使った本番向け `clasp deploy` に連動します。
 - 追加 environment は、別 script ID や別スプレッドシートを前提に、任意 branch と対応 secrets を用意した上で明示的に deploy する運用を想定しています。
@@ -206,6 +204,8 @@ Node.js `20.20.2` をセットアップします。
 
 ## 期待する運用
 
+- 開発メンバーが 1 名の間は `develop` への直接 commit / push を基本とする
+- 特別な理由がある場合のみ作業ブランチを利用する
 - `develop` はデフォルト script ID への `clasp push` トリガー
 - `main` は `production` への `clasp deploy` トリガー
 - branch 名と environment 名は 1:1 で一致させない
