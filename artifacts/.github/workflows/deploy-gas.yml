@@ -112,7 +112,7 @@ jobs:
             exit 1
           fi
           mkdir -p "$HOME"
-          printf '%s' "$CLASP_CREDENTIALS_JSON" | base64 -d > "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_CREDENTIALS_JSON" > "$HOME/.clasprc.json"
 
       - name: Validate clasp credentials JSON
         run: |

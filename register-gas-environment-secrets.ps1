@@ -100,9 +100,7 @@ function Get-MinifiedClaspCredentialsJson {
 
     try {
         $raw = Get-Content -Path $clasprcPath -Raw
-        $minified = ConvertFrom-Json $raw | ConvertTo-Json -Depth 100 -Compress
-        $credentialsBase64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($minified))
-        return $credentialsBase64
+        return (ConvertFrom-Json $raw | ConvertTo-Json -Depth 100 -Compress)
     } catch {
         throw "Failed to parse $clasprcPath: $($_.Exception.Message)"
     }
