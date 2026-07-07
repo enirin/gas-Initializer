@@ -1,5 +1,5 @@
 # Preflight check for init-gas-project.bat / init-gas-project.ps1
-# Checks whether the basic prerequisites are ready:
+# Checks:
 # - git
 # - node
 # - clasp installed
@@ -37,18 +37,19 @@ function Test-CommandExists {
 function Test-ClaspLogin {
     $path = Join-Path $HOME '.clasprc.json'
     if (-not (Test-Path $path)) {
-        return @{ Ok = $false; Details = "${path} が見つかりません。`clasp login` を実行してください。" }
+        return @{ Ok = $false; Details = "$path was not found. Run: clasp login" }
     }
 
     try {
         $json = Get-Content -Path $path -Raw | ConvertFrom-Json
         $token = $json.tokens.default
         if (-not $token -or [string]::IsNullOrWhiteSpace([string]$token.refresh_token)) {
-            return @{ Ok = $false; Details = "${path} に refresh_token がありません。`clasp login` を再実行してください。" }
+            return @{ Ok = $false; Details = "$path does not contain refresh_token. Run: clasp login" }
         }
-        return @{ Ok = $true; Details = "${path} が存在し、認証情報も見つかりました。" }
+
+        return @{ Ok = $true; Details = "$path exists and token data looks valid." }
     } catch {
-        return @{ Ok = $false; Details = "${path} の読み取りに失敗しました。`clasp login` を再実行してください。" }
+        return @{ Ok = $false; Details = "Failed to parse $path. Run: clasp login" }
     }
 }
 
@@ -56,58 +57,60 @@ function Test-GhAuth {
     try {
         & gh auth status 1>$null 2>$null
         if ($LASTEXITCODE -eq 0) {
-            return @{ Ok = $true; Details = "gh auth status が成功しました。" }
+            return @{ Ok = $true; Details = 'gh auth status succeeded.' }
         }
-        return @{ Ok = $false; Details = "`gh auth login` を実行してください。" }
+
+        return @{ Ok = $false; Details = 'Run: gh auth login' }
     } catch {
-        return @{ Ok = $false; Details = "`gh auth login` を実行してください。" }
+        return @{ Ok = $false; Details = 'Run: gh auth login' }
     }
 }
 
 Write-Host '================================' -ForegroundColor Cyan
-Write-Host 'GAS 初回構築 前提条件チェック' -ForegroundColor Cyan
+Write-Host 'GAS preflight check' -ForegroundColor Cyan
 Write-Host '================================' -ForegroundColor Cyan
 Write-Host ''
 
 $allOk = $true
 
 $nodeOk = Test-CommandExists -CommandName 'node'
-Write-Status -Label 'node が利用可能' -Ok $nodeOk -Details ($(if ($nodeOk) { "$(node -v)" } else { 'node が見つかりません。' }))
+Write-Status -Label 'node available' -Ok $nodeOk -Details ($(if ($nodeOk) { "$(node -v)" } else { 'node command not found.' }))
 $allOk = $allOk -and $nodeOk
 
 $gitOk = Test-CommandExists -CommandName 'git'
-Write-Status -Label 'git が利用可能' -Ok $gitOk -Details ($(if ($gitOk) { "$(git --version)" } else { 'git が見つかりません。' }))
+Write-Status -Label 'git available' -Ok $gitOk -Details ($(if ($gitOk) { "$(git --version)" } else { 'git command not found.' }))
 $allOk = $allOk -and $gitOk
 
 $claspOk = Test-CommandExists -CommandName 'clasp'
-Write-Status -Label 'clasp が利用可能' -Ok $claspOk -Details ($(if ($claspOk) { "$(clasp --version)" } else { 'clasp が見つかりません。npm install -g @google/clasp を実行してください。' }))
+Write-Status -Label 'clasp available' -Ok $claspOk -Details ($(if ($claspOk) { "$(clasp --version)" } else { 'clasp command not found. Run installer script.' }))
 $allOk = $allOk -and $claspOk
 
 $claspLogin = Test-ClaspLogin
-Write-Status -Label 'clasp login 済み' -Ok $claspLogin.Ok -Details $claspLogin.Details
+Write-Status -Label 'clasp login completed' -Ok $claspLogin.Ok -Details $claspLogin.Details
 $allOk = $allOk -and $claspLogin.Ok
 
 $ghOk = Test-CommandExists -CommandName 'gh'
-Write-Status -Label 'gh が利用可能' -Ok $ghOk -Details ($(if ($ghOk) { "$(gh --version | Select-Object -First 1)" } else { 'gh が見つかりません。GitHub CLI をインストールしてください。' }))
+Write-Status -Label 'gh available' -Ok $ghOk -Details ($(if ($ghOk) { "$(gh --version | Select-Object -First 1)" } else { 'gh command not found. Run installer script.' }))
 $allOk = $allOk -and $ghOk
 
 if ($ghOk) {
     $ghAuth = Test-GhAuth
-    Write-Status -Label 'gh auth login 済み' -Ok $ghAuth.Ok -Details $ghAuth.Details
+    Write-Status -Label 'gh auth login completed' -Ok $ghAuth.Ok -Details $ghAuth.Details
     $allOk = $allOk -and $ghAuth.Ok
 }
 
 $batPath = Join-Path $PSScriptRoot 'init-gas-project.bat'
 $ps1Path = Join-Path $PSScriptRoot 'init-gas-project.ps1'
-Write-Status -Label '初期化スクリプトが存在' -Ok ((Test-Path $batPath) -and (Test-Path $ps1Path)) -Details "init-gas-project.bat / init-gas-project.ps1 を確認しました。"
-$allOk = $allOk -and ((Test-Path $batPath) -and (Test-Path $ps1Path))
+$initScriptsOk = (Test-Path $batPath) -and (Test-Path $ps1Path)
+Write-Status -Label 'init scripts exist' -Ok $initScriptsOk -Details 'Checked init-gas-project.bat and init-gas-project.ps1'
+$allOk = $allOk -and $initScriptsOk
 
 Write-Host ''
 if ($allOk) {
-    Write-Host '前提条件は揃っています。init-gas-project.bat を実行できます。' -ForegroundColor Green
+    Write-Host 'All prerequisites are ready. You can run init-gas-project.bat.' -ForegroundColor Green
     exit 0
 }
 
-Write-Host '前提条件が不足しています。上記の [NG] を解消してから再実行してください。' -ForegroundColor Red
-Write-Host '不足ツールのインストールには installers\install-gas-prerequisites.bat を実行できます。' -ForegroundColor Yellow
+Write-Host 'Some prerequisites are missing. Fix [NG] items and rerun this check.' -ForegroundColor Red
+Write-Host 'To install tools, run: installers\install-gas-prerequisites.bat' -ForegroundColor Yellow
 exit 1

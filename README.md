@@ -118,6 +118,8 @@ check-gas-init-prerequisites.bat
 check-gas-init-prerequisites.ps1
 ```
 
+注記: 古いファイルをローカルに保持している場合、文字コード差異で PowerShell の解析エラーが出ることがあります。`develop` の最新を取得してから再実行してください。
+
 不足があった場合は、次のインストールスクリプトを実行してください。
 
 ```powershell
