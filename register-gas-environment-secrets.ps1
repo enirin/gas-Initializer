@@ -16,7 +16,8 @@ $ErrorActionPreference = 'Stop'
 
 # If ProjectPath is not specified, prompt user
 if ([string]::IsNullOrWhiteSpace($ProjectPath)) {
-    Write-Section 'Project Folder Setup'
+    Write-Host 'Project Folder Setup' -ForegroundColor Yellow
+    Write-Host ''
     $ProjectPath = Read-Host 'Enter project folder path (where .clasp.json exists)'
 }
 
@@ -29,7 +30,8 @@ if (-not (Test-Path $ProjectPath -PathType Container)) {
 
 # If Repository and RepositoryUrl are not specified, prompt user
 if ([string]::IsNullOrWhiteSpace($Repository) -and [string]::IsNullOrWhiteSpace($RepositoryUrl)) {
-    Write-Section 'GitHub Repository Setup'
+    Write-Host 'GitHub Repository Setup' -ForegroundColor Yellow
+    Write-Host ''
     $Repository = Read-Host 'Enter repository (owner/repo or URL)'
 }
 
