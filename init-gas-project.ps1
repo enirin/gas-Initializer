@@ -66,6 +66,13 @@ function Get-GitHubRepositoryName {
     throw "Could not parse owner/repo from URL: $RepositoryUrl"
 }
 
+function Test-GitRemoteAccess {
+    param([Parameter(Mandatory = $true)][string]$RepositoryUrl)
+
+    & git ls-remote $RepositoryUrl HEAD 1>$null 2>$null
+    return ($LASTEXITCODE -eq 0)
+}
+
 function Invoke-SecretRegistration {
     param(
         [Parameter(Mandatory = $true)][string]$Repository,
@@ -210,11 +217,25 @@ Write-Host 'Git initialized.' -ForegroundColor Green
 Write-Host ''
 Write-Section 'Step 5: Configure remote'
 
-$repoUrl = Read-Host 'Repository URL (example: https://github.com/enirin/production-portal.git)'
-if ([string]::IsNullOrWhiteSpace($repoUrl)) {
-    Write-Host 'Repository URL is required.' -ForegroundColor Red
-    pause
-    exit 1
+$repoUrl = ''
+while ($true) {
+    $repoUrl = Read-Host 'Repository URL (example: https://github.com/enirin/production-portal.git)'
+    if ([string]::IsNullOrWhiteSpace($repoUrl)) {
+        Write-Host 'Repository URL is required.' -ForegroundColor Red
+        continue
+    }
+
+    $repoUrl = $repoUrl.Trim().TrimEnd('/')
+    if (Test-GitRemoteAccess -RepositoryUrl $repoUrl) {
+        break
+    }
+
+    Write-Host 'Could not access the repository. Check URL and your GitHub permission.' -ForegroundColor Red
+    Write-Host 'If this repository is private, make sure git authentication is configured.' -ForegroundColor Yellow
+    $retryRemote = Read-Host 'Retry repository URL input? (y/n, default: y)'
+    if (-not [string]::IsNullOrWhiteSpace($retryRemote) -and $retryRemote -notmatch '^[yY]') {
+        exit 1
+    }
 }
 
 & git remote add origin $repoUrl 2>&1 | Out-Null
@@ -246,6 +267,8 @@ Write-Section 'Step 7: Push branches'
 & git push -u origin develop 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Host 'Failed to push develop. Please push manually.' -ForegroundColor Red
+    Write-Host "Remote URL: $repoUrl" -ForegroundColor Yellow
+    Write-Host 'Hint: Verify repository exists and your authentication has access.' -ForegroundColor Yellow
 } else {
     & git checkout -b main 2>&1 | Out-Null
     if ($LASTEXITCODE -eq 0) {

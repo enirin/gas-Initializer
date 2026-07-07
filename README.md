@@ -225,6 +225,16 @@ npm install -g @google/clasp
 - 新しい空フォルダで再実行する
 - または既存フォルダの `.git` を削除してから再実行する
 
+### エラー: `remote: Repository not found.`
+
+以下を確認してください。
+
+- 入力したリポジトリ URL が正しいか
+- 対象リポジトリが存在するか
+- private リポジトリの場合、`git` の認証情報にアクセス権があるか
+
+`init-gas-project.ps1` はリモート到達確認を行うため、URL 入力時点で失敗原因を早期に検出できます。
+
 ## スクリプト修正
 
 スクリプト内容を編集する場合は、`init-gas-project.ps1` と `register-gas-environment-secrets.ps1` を任意のテキストエディタで開いて修正してください。
