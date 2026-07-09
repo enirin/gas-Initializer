@@ -218,7 +218,11 @@ if ([string]::IsNullOrWhiteSpace($DeploymentId)) {
 
 $credentialsJson = Get-MinifiedClaspCredentialsJson
 if ([string]::IsNullOrWhiteSpace($credentialsJson)) {
-    Write-Host '.clasprc.json was not found. CLASP_CREDENTIALS_JSON will be skipped.' -ForegroundColor Yellow
+    Write-Host 'CLASP_CREDENTIALS_JSON could not be resolved.' -ForegroundColor Red
+    Write-Host 'Reason: ~/.clasprc.json was not found or empty.' -ForegroundColor Red
+    Write-Host 'Run `clasp login` on this machine, then retry this script.' -ForegroundColor Yellow
+    pause
+    exit 1
 }
 
 Write-Section "Target repository: $resolvedRepository"

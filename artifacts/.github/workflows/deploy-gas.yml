@@ -180,6 +180,30 @@ jobs:
           const fs = require('fs');
           const p = `${process.env.HOME}/.clasprc.json`;
           const raw = fs.readFileSync(p, 'utf8');
+
+          const trimmed = raw.trim();
+          const first = raw[0] || '';
+          const firstCode = first ? first.charCodeAt(0) : -1;
+          const firstKind = !first
+            ? 'empty'
+            : first === '{'
+              ? 'open-brace'
+              : /\s/.test(first)
+                ? 'whitespace'
+                : /[A-Za-z]/.test(first)
+                  ? 'alpha'
+                  : /[0-9]/.test(first)
+                    ? 'digit'
+                    : 'other';
+          const startsWithBom = raw.startsWith('\uFEFF');
+
+          // Diagnostic only: do not print secret content.
+          console.log(`diagnostic: rawLength=${raw.length}`);
+          console.log(`diagnostic: trimmedLength=${trimmed.length}`);
+          console.log(`diagnostic: firstCharKind=${firstKind}`);
+          console.log(`diagnostic: firstCharCode=${firstCode}`);
+          console.log(`diagnostic: startsWithBOM=${startsWithBom}`);
+
           let json;
           try {
             json = JSON.parse(raw);
