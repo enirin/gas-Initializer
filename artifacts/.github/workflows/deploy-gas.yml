@@ -184,6 +184,8 @@ jobs:
           const trimmed = raw.trim();
           const first = raw[0] || '';
           const firstCode = first ? first.charCodeAt(0) : -1;
+          const second = raw[1] || '';
+          const secondCode = second ? second.charCodeAt(0) : -1;
           const firstKind = !first
             ? 'empty'
             : first === '{'
@@ -195,6 +197,19 @@ jobs:
                   : /[0-9]/.test(first)
                     ? 'digit'
                     : 'other';
+          const secondKind = !second
+            ? 'empty'
+            : second === '"'
+              ? 'double-quote'
+              : second === '\\'
+                ? 'backslash'
+                : /\s/.test(second)
+                  ? 'whitespace'
+                  : /[A-Za-z]/.test(second)
+                    ? 'alpha'
+                    : /[0-9]/.test(second)
+                      ? 'digit'
+                      : 'other';
           const startsWithBom = raw.startsWith('\uFEFF');
 
           // Diagnostic only: do not print secret content.
@@ -202,6 +217,8 @@ jobs:
           console.log(`diagnostic: trimmedLength=${trimmed.length}`);
           console.log(`diagnostic: firstCharKind=${firstKind}`);
           console.log(`diagnostic: firstCharCode=${firstCode}`);
+          console.log(`diagnostic: secondCharKind=${secondKind}`);
+          console.log(`diagnostic: secondCharCode=${secondCode}`);
           console.log(`diagnostic: startsWithBOM=${startsWithBom}`);
 
           let json;
