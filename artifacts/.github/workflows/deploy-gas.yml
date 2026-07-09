@@ -243,12 +243,34 @@ jobs:
           CLIENT_SECRET=$(node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync(process.env.HOME+'/.clasprc.json','utf8'));process.stdout.write(j.tokens.default.client_secret)")
           REFRESH_TOKEN=$(node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync(process.env.HOME+'/.clasprc.json','utf8'));process.stdout.write(j.tokens.default.refresh_token)")
 
-          TOKEN_RESPONSE=$(curl -sS --fail --retry 8 --retry-all-errors --retry-delay 3 \
+          TOKEN_RESPONSE_WITH_STATUS=$(curl -sS --retry 3 --retry-all-errors --retry-delay 3 \
             -X POST 'https://oauth2.googleapis.com/token' \
             --data-urlencode "client_id=${CLIENT_ID}" \
             --data-urlencode "client_secret=${CLIENT_SECRET}" \
             --data-urlencode "refresh_token=${REFRESH_TOKEN}" \
-            --data-urlencode 'grant_type=refresh_token')
+            --data-urlencode 'grant_type=refresh_token' \
+            --write-out '\nHTTP_STATUS:%{http_code}')
+
+          HTTP_STATUS=$(printf '%s\n' "$TOKEN_RESPONSE_WITH_STATUS" | sed -n 's/^HTTP_STATUS://p' | tail -n 1)
+          TOKEN_RESPONSE=$(printf '%s\n' "$TOKEN_RESPONSE_WITH_STATUS" | sed '/^HTTP_STATUS:/d')
+
+          if [ "$HTTP_STATUS" != "200" ]; then
+            HTTP_STATUS="$HTTP_STATUS" TOKEN_RESPONSE="$TOKEN_RESPONSE" node - <<'EOF'
+            let payload = {};
+            try {
+              payload = JSON.parse(process.env.TOKEN_RESPONSE || '{}');
+            } catch {
+              // keep payload empty
+            }
+            const oauthError = payload.error || 'unknown_error';
+            const oauthDesc = payload.error_description || 'No description returned.';
+            console.error(`OAuth token refresh failed: HTTP ${process.env.HTTP_STATUS}`);
+            console.error(`oauth_error=${oauthError}`);
+            console.error(`oauth_error_description=${oauthDesc}`);
+            console.error('Action: Run `clasp login` again on the machine that registers secrets, then re-run register-gas-environment-secrets.');
+            process.exit(1);
+            EOF
+          fi
 
           TOKEN_RESPONSE="$TOKEN_RESPONSE" node - <<'EOF'
           const fs = require('fs');
