@@ -269,7 +269,7 @@ jobs:
             console.error(`oauth_error_description=${oauthDesc}`);
             console.error('Action: Run `clasp login` again on the machine that registers secrets, then re-run register-gas-environment-secrets.');
             process.exit(1);
-            EOF
+          EOF
           fi
 
           TOKEN_RESPONSE="$TOKEN_RESPONSE" node - <<'EOF'
