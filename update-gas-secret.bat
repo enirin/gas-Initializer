@@ -6,11 +6,21 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 set "PS_SCRIPT=%~dp0update-gas-secret.ps1"
+set "FALLBACK_PS_SCRIPT=%~dp0..\gas-Initializer\update-gas-secret.ps1"
 
 if not exist "!PS_SCRIPT!" (
-    echo Error: update-gas-secret.ps1 not found in %~dp0
-    pause
-    exit /b 1
+    if exist "!FALLBACK_PS_SCRIPT!" (
+        set "PS_SCRIPT=!FALLBACK_PS_SCRIPT!"
+        echo Info: local update-gas-secret.ps1 not found. Using fallback:
+        echo       !PS_SCRIPT!
+    ) else (
+        echo Error: update-gas-secret.ps1 not found.
+        echo Checked:
+        echo   - %~dp0update-gas-secret.ps1
+        echo   - %~dp0..\gas-Initializer\update-gas-secret.ps1
+        pause
+        exit /b 1
+    )
 )
 
 REM Pass all arguments to PowerShell script

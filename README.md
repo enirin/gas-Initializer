@@ -218,6 +218,11 @@ cd C:\path\to\project
 .\update-gas-secret.bat
 ```
 
+`update-gas-secret.bat` はまず同じフォルダ内の `update-gas-secret.ps1` を参照し、
+見つからない場合は `..\gas-Initializer\update-gas-secret.ps1` を自動で参照します。
+そのため、`gas-Initializer` を各プロジェクトと同列に配置していれば、
+各プロジェクト側には `update-gas-secret.bat` だけを配置する運用が可能です。
+
 このスクリプトは以下を自動判定します：
 - プロジェクトフォルダ（カレントディレクトリ）
 - Apps Script Script ID（`.clasp.json` から）
