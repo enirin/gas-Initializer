@@ -33,7 +33,7 @@ try {
 }
 
 # Extract Repository from .git/config
-$gitConfigPath = Join-Path $currentPath '.git' 'config'
+$gitConfigPath = Join-Path (Join-Path $currentPath '.git') 'config'
 if (-not (Test-Path $gitConfigPath)) {
     Write-Host 'Error: .git/config not found. Initialize git repository first.' -ForegroundColor Red
     pause
