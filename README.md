@@ -200,6 +200,38 @@ register-gas-environment-secrets.bat
 ./register-gas-environment-secrets.ps1 -ProjectPath "C:\path\to\project"
 ```
 
+### 秘密情報の更新（トークンリセット後など）
+
+認証トークンが期限切れになった場合、以下の手順で更新できます。
+
+**手順：**
+
+1. ローカル端末で `clasp login` を再実行
+```powershell
+clasp logout
+clasp login
+```
+
+2. プロジェクトフォルダで `update-gas-secret.bat` を実行
+```powershell
+cd C:\path\to\project
+.\update-gas-secret.bat
+```
+
+このスクリプトは以下を自動判定します：
+- プロジェクトフォルダ（カレントディレクトリ）
+- Apps Script Script ID（`.clasp.json` から）
+- GitHub リポジトリ名（`.git/config` から）
+
+Environment 名のみプロンプトで聞かれます（デフォルト: `production`）。  
+特に複数マシンで同じアカウントを使用している場合、認証トークンの期限管理が重要です。
+
+**パターン 3：コマンドラインから environment を指定**
+```powershell
+cd C:\path\to\project
+.\update-gas-secret.ps1 -EnvironmentNames 'production,staging'
+```
+
 ## トラブルシューティング
 
 ### エラー: `clasp` コマンドが見つからない
@@ -231,6 +263,33 @@ npm install -g @google/clasp
 - `gh` コマンドがインストールされているか
 - `gh auth login` が完了しているか
 - 対象 repository に対する権限があるか
+
+### エラー: `OAuth token refresh failed: HTTP 400` または `invalid_grant`
+
+クライアント認証（Google OAuth）のトークン更新に失敗した状態です。  
+これは以下の原因がほとんどです：
+
+- `clasp login` 時に生成された `refresh_token` が失効した
+- 複数マシンで同じアカウントの clasp を同時使用している
+- Google の consent 画面で再承認が必要になった
+
+対処：
+
+1. secrets 登録に使用したマシンで再度ログイン
+```powershell
+clasp logout
+clasp login
+```
+
+2. プロジェクト直下で `update-gas-secret.bat` を実行して再登録
+```powershell
+cd C:\path\to\project
+.\update-gas-secret.bat
+```
+
+3. `gas_sync_and_deploy` workflow を再実行
+
+複数マシンを使う場合は、secrets 登録用に **1台の登録専用マシン** を決めて、そこから登録を一元管理することをお勧めします。
 
 ### エラー: `GitHub Actions is not permitted to create or approve pull requests.`
 
